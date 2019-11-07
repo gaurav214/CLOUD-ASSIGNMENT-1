@@ -1,0 +1,29 @@
+==PIG==
+d1 = LOAD '/Gaurav/QueryResults_1.csv' USING org.apache.pig.piggybank.storage.CSVExcelStorage(',', 'YES_MULTILINE','NOCHANGE','SKIP_INPUT_HEADER') AS (Id:int, PostTypeId:int,  AcceptedAnswerId:int, ParentId:int, CreationDate:chararray, DeletionDate:chararray, Score:int, ViewCount:int, Body:chararray, OwnerUserId:int, OwnerDisplayName:chararray, LastEditorUserId:int, LastEditorDisplayName:chararray, LastEditDate:chararray, LastActivityDate:chararray, Title:chararray, Tags:chararray, AnswerCount:int, CommentCount:int, FavoriteCount:int, ClosedDate:chararray, CommunityOwnedDate:chararray);
+
+d2 = LOAD '/Gaurav/QueryResults_2.csv' USING org.apache.pig.piggybank.storage.CSVExcelStorage(',', 'YES_MULTILINE','NOCHANGE','SKIP_INPUT_HEADER') AS (Id:int, PostTypeId:int,  AcceptedAnswerId:int, ParentId:int, CreationDate:chararray, DeletionDate:chararray, Score:int, ViewCount:int, Body:chararray, OwnerUserId:int, OwnerDisplayName:chararray, LastEditorUserId:int, LastEditorDisplayName:chararray, LastEditDate:chararray, LastActivityDate:chararray, Title:chararray, Tags:chararray, AnswerCount:int, CommentCount:int, FavoriteCount:int, ClosedDate:chararray, CommunityOwnedDate:chararray);
+
+d3 = LOAD '/Gaurav/QueryResults_3.csv' USING org.apache.pig.piggybank.storage.CSVExcelStorage(',', 'YES_MULTILINE','NOCHANGE','SKIP_INPUT_HEADER') AS (Id:int, PostTypeId:int,  AcceptedAnswerId:int, ParentId:int, CreationDate:chararray, DeletionDate:chararray, Score:int, ViewCount:int, Body:chararray, OwnerUserId:int, OwnerDisplayName:chararray, LastEditorUserId:int, LastEditorDisplayName:chararray, LastEditDate:chararray, LastActivityDate:chararray, Title:chararray, Tags:chararray, AnswerCount:int, CommentCount:int, FavoriteCount:int, ClosedDate:chararray, CommunityOwnedDate:chararray);
+
+d4 = LOAD '/Gaurav/QueryResults_4.csv' USING org.apache.pig.piggybank.storage.CSVExcelStorage(',', 'YES_MULTILINE','NOCHANGE','SKIP_INPUT_HEADER') AS (Id:int, PostTypeId:int,  AcceptedAnswerId:int, ParentId:int, CreationDate:chararray, DeletionDate:chararray, Score:int, ViewCount:int, Body:chararray, OwnerUserId:int, OwnerDisplayName:chararray, LastEditorUserId:int, LastEditorDisplayName:chararray, LastEditDate:chararray, LastActivityDate:chararray, Title:chararray, Tags:chararray, AnswerCount:int, CommentCount:int, FavoriteCount:int, ClosedDate:chararray, CommunityOwnedDate:chararray);
+
+-- concat all the four CSV files
+dataset = UNION d1,d2,d3,d4;
+
+-- count in pig
+csv_group = Group dataset ALL;
+csv_count = FOREACH csv_group GENERATE COUNT(dataset.Body);
+dump csv_count;
+
+----------
+/* Consider only the required columns.
+Remove commas from 'Body','Title' and 'Tags' fields. */
+
+cleandata = FOREACH dataset GENERATE  Id AS Id, Score AS Score, REPLACE(REPLACE(REPLACE(Body, '\n*', ''),',*',''),'<.*?>','') AS Body, OwnerUserId AS OwnerUserId, REPLACE(Title,',*','') AS Title, REPLACE(Tags,',*','') AS Tags;
+--------------
+-- Eliminate rows with NULL values in 'OwnerUserId' and 'Score' fields.
+validdata = FILTER cleandata BY (OwnerUserId IS NOT NULL) AND (Score IS NOT NULL);
+-------------
+
+-- Finally, store the "clean CSV" into hdfs location (location: hadoop fs -ls /)
+STORE validdata INTO '/input/valid_data.csv' USING org.apache.pig.piggybank.storage.CSVExcelStorage(',');

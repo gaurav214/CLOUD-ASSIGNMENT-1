@@ -1,0 +1,25 @@
+
+hadoop jar /home/gaurav_negi2/hadoop-streaming-2.7.1.jar -file /home/gaurav_negi2/MapperPhaseOne.py /home/gaurav_negi2/ReducerPhaseOne.py -mapper "python MapperPhaseOne.py" -reducer "python ReducerPhaseOne.py" -input /Gaurav/hiveResults/000000_0 -output /output1
+
+hadoop jar /home/gaurav_negi2/hadoop-streaming-2.7.1.jar -file /home/gaurav_negi2/MapperPhaseTwo.py /home/gaurav_negi2/ReducerPhaseTwo.py -mapper "python MapperPhaseTwo.py" -reducer "python ReducerPhaseTwo.py" -input /Gaurav/Result1.csv -output /output2
+
+hadoop jar /home/gaurav_negi2/hadoop-streaming-2.7.1.jar -file /home/gaurav_negi2/MapperPhaseThree.py /home/gaurav_negi2/ReducerPhaseThree.py -mapper "python MapperPhaseThree.py" -reducer "python ReducerPhaseThree.py" -input /Gaurav/Result2.csv -output /output3
+
+ sed -e 's/\s/,/g' Result3.csv > user_tfidf.csv
+==============================
+create table user_tfidf(Term String, Id int, Tfidf float)
+row format delimited
+FIELDS TERMINATED BY ','
+location 'user_tfidf.csv';
+
+
+load data local inpath 'user_tfidf.csv' overwrite into table user_tfidf;
+
+
+SELECT *
+FROM (
+SELECT ROW_NUMBER()
+OVER(PARTITION BY Id
+ORDER BY tfidf DESC) AS TfRank, *
+FROM user_tfidf) n
+WHERE TfRank IN (1,2,3,4,5,6,7,8,9,10);
